@@ -1,5 +1,6 @@
 import time
 import chess
+import math
 
 ops_left = 0
 
@@ -145,6 +146,15 @@ def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_
 
      # if ran out of operations or short on time, just use a cheap static evaluation
     if (start_time + 1000000000 - time.time_ns()) // 1000000 < cutoff:
+        if should_print:
+            best_eval, best_move = -math.inf, None
+            for mv in board.legal_moves:
+                board.push(mv)
+                curr_eval = primitive_fast_heuristic(board)
+                if curr_eval > best_eval:
+                    best_eval, best_move = curr_eval, mv
+                board.pop()
+            return best_eval, best_move
         return primitive_fast_heuristic(board)
     
 
@@ -203,7 +213,7 @@ def next_move(board, time_left, color, net, eval_fun):
     elif time_left > 2.0:
         cutoff = 500
     else: 
-        cutoff = 800
+        cutoff = 1000
 
     # 7 seconds for 1000 static evals
 

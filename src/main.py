@@ -61,7 +61,7 @@ net = load_model("src/utils/most_recent2_slightly_better.pt")
 
 @chess_manager.entrypoint
 def test_func(ctx: GameContext):
-    return zl_next_move(ctx.board, min(8, ctx.timeLeft), 1 if ctx.board.turn else -1, net, evaluate_position)
+    return zl_next_move(ctx.board, min(8.0, ctx.timeLeft), 1 if ctx.board.turn else -1, net, evaluate_position)
 
 @chess_manager.reset
 def reset_func(ctx: GameContext):
