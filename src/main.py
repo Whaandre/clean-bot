@@ -17,7 +17,7 @@ PIECE_MAP = {
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-def load_model(path="src/utils/most_recent2.pt"):
+def load_model(path="src/utils/most_recent2_slightly_better.pt"):
     net = EvalNet().to(DEVICE)
     checkpoint = torch.load(path, map_location=DEVICE)
     net.load_state_dict(checkpoint['model_state_dict'])
@@ -50,14 +50,14 @@ def fen_to_tensor(fen):
 
 def evaluate_position(fen, net=None):
     if net is None:
-       net = load_model("src/utils/most_recent2.pt")
+       net = load_model("src/utils/most_recent2_slightly_better.pt")
 
     t = fen_to_tensor(fen).unsqueeze(0).to(DEVICE)
     with torch.no_grad():
         score = net(t).item()
     return score
 
-net = load_model("src/utils/most_recent2.pt")
+net = load_model("src/utils/most_recent2_slightly_better.pt")
 
 @chess_manager.entrypoint
 def test_func(ctx: GameContext):

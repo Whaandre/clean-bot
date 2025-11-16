@@ -133,15 +133,20 @@ def primitive_fast_heuristic(board: chess.Board):
     total = material_score + pos_score + mobility_score + pawn_structure_score + king_safety_score
     return total
 
+
+start_time = 0
+cutoff = 0
+
 def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_print=False):
     global ops_left
+    global start_time
+    global cutoff
     # print(ops_left)
 
-     # if ran out of operations, just use a cheap static evaluation
-    if ops_left <= 0:
+     # if ran out of operations or short on time, just use a cheap static evaluation
+    if (start_time + 1000000000 - time.time_ns()) // 1000000 < cutoff:
         return primitive_fast_heuristic(board)
     
-    ops_left -= 1
 
     if depth == 0 or board.is_game_over():
         fen = board.fen()
@@ -189,15 +194,19 @@ def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_
 # takes in a board, time left, and side to play - returns a chess.move
 def next_move(board, time_left, color, net, eval_fun):
     global ops_left
+    global start_time
+    global cutoff
+
     # hard code logic for # of operations left
     if time_left > 5.0:
-        ops_left = 4000
+        cutoff = 70
     elif time_left > 2.0:
-        ops_left = 2000
+        cutoff = 500
     else: 
-        ops_left = max(1, int((time_left / 2.0) * 70))
+        cutoff = 800
 
     # 7 seconds for 1000 static evals
 
-    best_eval, best_move = minimax(board, 3, -float('inf'), float('inf'), color == 1, net, eval_fun, should_print=True)
+    start_time = time.time_ns()
+    best_eval, best_move = minimax(board, 2, -float('inf'), float('inf'), color == 1, net, eval_fun, should_print=True)
     return best_move
