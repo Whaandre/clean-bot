@@ -137,7 +137,8 @@ def primitive_fast_heuristic(board: chess.Board):
 start_time = 0
 cutoff = 0
 
-def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_print=False):
+# pass in color as what color we're playing this game
+def minimax(board, depth, alpha, beta, maximizing_player, color, net, eval_fun, should_print=False):
     global ops_left
     global start_time
     global cutoff
@@ -153,17 +154,18 @@ def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_
         eval_score = eval_fun(fen, net)
         return eval_score
 
+    # here, "maximizing" just means trying to get as close to zero as possible
     if maximizing_player:
-        max_eval = -float('inf')
+        best_eval = float('inf')
         best_move = None
         for move in board.legal_moves:
             board.push(move)
             eval = minimax(board, depth - 1, alpha, beta, True, net, eval_fun, False)
             board.pop()
 
-            if eval > max_eval:
+            if abs(eval) < best_eval:
                 best_move = move
-                max_eval = eval
+                best_eval = abs(eval)
 
             alpha = max(alpha, eval)
             if beta <= alpha:
@@ -208,5 +210,5 @@ def next_move(board, time_left, color, net, eval_fun):
     # 7 seconds for 1000 static evals
 
     start_time = time.time_ns()
-    best_eval, best_move = minimax(board, 2, -float('inf'), float('inf'), color == 1, net, eval_fun, should_print=True)
+    best_eval, best_move = minimax(board, 2, -float('inf'), float('inf'), color == 1, color, net, eval_fun, should_print=True)
     return best_move
