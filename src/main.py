@@ -4,8 +4,6 @@ import math
 import torch
 import numpy as np
 from .utils.model import EvalNet
-from .utils.prune_bfs import bfs_next_move
-from .utils.alphabeta import AlphaBetaEngine
 from .utils.zetalambda import next_move as zl_next_move
 
 PIECE_MAP = {
@@ -18,7 +16,6 @@ PIECE_MAP = {
 }
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODE = "ZLS" # "DIR", "BFS", "ABP", "ZLS"
 
 def load_model(path="src/utils/most_recent.pt"):
     net = EvalNet().to(DEVICE)
@@ -60,46 +57,12 @@ def evaluate_position(fen, net=None):
         score = net(t).item()
     return score
 
-def direct_search(ctx: GameContext):
-    color = 1 if ctx.board.turn else -1
-    best_move, best_eval = None, -math.inf 
-    for move in ctx.board.legal_moves: 
-        ctx.board.push(move)
-        curr_eval = evaluate_position(ctx.board.fen(), net) * color
-        # print(f"Move: {move}, Eval: {curr_eval * color}")
-        if curr_eval > best_eval: 
-            best_eval = curr_eval 
-            best_move = move
-        ctx.board.pop()
-    return best_move
-
-def bf_search(ctx: GameContext):
-    return bfs_next_move(ctx.board, ctx.timeLeft, 1 if ctx.board.turn else -1, net, evaluate_position)
-
-def ab_search(ctx: GameContext):
-    return engine.search_move(ctx.board, ctx.timeLeft)
-
-def zl_search(ctx: GameContext):
-    return zl_next_move(ctx.board, 10, 1 if ctx.board.turn else -1, net, evaluate_position)
-
 net = load_model("src/utils/1852.pt")
-engine = AlphaBetaEngine(evaluate_position, net)
 
 @chess_manager.entrypoint
 def test_func(ctx: GameContext):
-    print("TimeLeft: ", ctx.timeLeft)
-    if MODE == "DIR":
-        return direct_search(ctx)
-    elif MODE == "BFS":
-        return bf_search(ctx)
-    elif MODE == "ABP":
-        return ab_search(ctx)
-    elif MODE == "ZLS":
-        return zl_search(ctx)
-    return None
+    return zl_next_move(ctx.board, 10, 1 if ctx.board.turn else -1, net, evaluate_position)
 
 @chess_manager.reset
 def reset_func(ctx: GameContext):
-    global engine
-    engine = AlphaBetaEngine(evaluate_position, net)
     pass
