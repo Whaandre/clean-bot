@@ -4,7 +4,7 @@ import math
 import torch
 import numpy as np
 from .utils.model import EvalNet
-from .utils.zetalambda import next_move as zl_next_move
+from .utils.sir_stalemate import next_move as sm_next_move
 
 PIECE_MAP = {
     chess.PAWN: 0,
@@ -61,7 +61,7 @@ net = load_model("src/utils/most_recent2_slightly_better.pt")
 
 @chess_manager.entrypoint
 def test_func(ctx: GameContext):
-    return zl_next_move(ctx.board, min(8, ctx.timeLeft), 1 if ctx.board.turn else -1, net, evaluate_position)
+    return sm_next_move(ctx.board, min(8, ctx.timeLeft), 1 if ctx.board.turn else -1, net, evaluate_position)
 
 @chess_manager.reset
 def reset_func(ctx: GameContext):
