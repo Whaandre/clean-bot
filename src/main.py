@@ -9,7 +9,7 @@ from .utils.chess_game import fen_to_tensor
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-def load_model(path="src/utils/most_recent3.pt"):
+def load_model(path="src/utils/most_recent4_last.pt"):
     net = EvalNet().to(DEVICE)
     checkpoint = torch.load(path, map_location=DEVICE)
     net.load_state_dict(checkpoint['model_state_dict'])

@@ -91,6 +91,9 @@ def primitive_fast_heuristic(board: chess.Board):
     Combines material, piece-square-related positional bonuses,
     mobility, pawn structure, and basic king safety heuristics.
     """
+    if board.is_checkmate():
+        return -9999 if board.turn == chess.WHITE else 9999
+
     material_score = 0
     pos_score = 0
     mobility_score = 0
@@ -138,11 +141,23 @@ def primitive_fast_heuristic(board: chess.Board):
 start_time = 0
 cutoff = 0
 
-def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_print=False):
+import random
+
+def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, current_noise, should_print=False):
     global ops_left
     global start_time
     global cutoff
     # print(ops_left)
+
+    # dont need to worry about printing here
+    if board.is_game_over():
+        if board.is_checkmate():
+            if maximizing_player:
+                return -9999
+            else:
+                return 9999
+        else:
+            return 0
 
      # if ran out of operations or short on time, just use a cheap static evaluation
     if (start_time + 1000000000 - time.time_ns()) // 1000000 < cutoff:
@@ -157,18 +172,19 @@ def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_
             return best_eval, best_move
         return primitive_fast_heuristic(board)
     
-
-    if depth == 0 or board.is_game_over():
+    # assumes you still have time left
+    if depth == 0:
         fen = board.fen()
-        eval_score = eval_fun(fen, net)
-        return eval_score
+        return eval_fun(fen, net)
 
     if maximizing_player:
         max_eval = -float('inf')
         best_move = None
         for move in board.legal_moves:
             board.push(move)
-            eval = minimax(board, depth - 1, alpha, beta, True, net, eval_fun, False)
+            eval = minimax(board, depth - 1, alpha, beta, True, net, eval_fun, current_noise, False)
+            noise = random.random() * (eval * current_noise)
+            eval += noise
             board.pop()
 
             if eval > max_eval:
@@ -186,7 +202,9 @@ def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_
         best_move = None
         for move in board.legal_moves:
             board.push(move)
-            eval = minimax(board, depth - 1, alpha, beta, True, net, eval_fun, False)
+            eval = minimax(board, depth - 1, alpha, beta, True, net, eval_fun, current_noise, False)
+            noise = random.random() * (eval * current_noise)
+            eval -= noise
             board.pop()
 
             if eval < min_eval:
@@ -202,10 +220,14 @@ def minimax(board, depth, alpha, beta, maximizing_player, net, eval_fun, should_
         return min_eval
 
 # takes in a board, time left, and side to play - returns a chess.move
+moves = 0
+noise = 0
 def next_move(board, time_left, color, net, eval_fun):
     global ops_left
     global start_time
     global cutoff
+    global moves
+    global noise
 
     # hard code logic for # of operations left
     if time_left > 5.0:
@@ -215,8 +237,14 @@ def next_move(board, time_left, color, net, eval_fun):
     else: 
         cutoff = 1000
 
+    if moves >= 20:
+        noise = 0.07
+    elif moves >= 60:
+        noise = 0
+
     # 7 seconds for 1000 static evals
 
     start_time = time.time_ns()
-    best_eval, best_move = minimax(board, 2, -float('inf'), float('inf'), color == 1, net, eval_fun, should_print=True)
+    best_eval, best_move = minimax(board, 2, -float('inf'), float('inf'), color == 1, net, eval_fun, noise, should_print=True)
+    moves += 1
     return best_move
