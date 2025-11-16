@@ -4,3 +4,7 @@ venv
 .env.local
 .env
 devtools
+src/utils/alphatbeta.py
+src/utils/prune_bfs.py
+src/save.py
+src/test.py
