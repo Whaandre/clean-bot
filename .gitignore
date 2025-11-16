@@ -8,3 +8,4 @@ src/utils/alphabeta.py
 src/utils/prune_bfs.py
 src/save.py
 src/test.py
+.DS_Store
